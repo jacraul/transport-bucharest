@@ -16,8 +16,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'cheie_secreta_bucuresti'
 
 # --- CONFIGURARE BAZA DE DATE ---
-# ATENȚIE: Verifică dacă parola '0799044133' și userul 'postgres' sunt corecte
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:0799044133@localhost/transport_times'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:@localhost/transport_times'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
