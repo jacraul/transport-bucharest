@@ -1,0 +1,160 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<style>
+    #live-map {
+        height: 75vh;
+        width: 100%;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        z-index: 1;
+    }
+    
+    .controls-panel {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+    }
+
+    /* Iconiță pulsantă pentru vehicule */
+    .bus-marker {
+        background-color: #005eb8;
+        border: 2px solid white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        box-shadow: 0 0 0 rgba(0, 94, 184, 0.4);
+        animation: pulse-blue 2s infinite;
+        text-align: center;
+        color: white;
+        font-size: 10px;
+        line-height: 16px;
+        font-weight: bold;
+    }
+
+    .metro-marker {
+        background-color: #d63031;
+        box-shadow: 0 0 0 rgba(214, 48, 49, 0.4);
+        animation: pulse-red 2s infinite;
+    }
+
+    @keyframes pulse-blue {
+        0% { box-shadow: 0 0 0 0 rgba(0, 94, 184, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(0, 94, 184, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(0, 94, 184, 0); }
+    }
+    @keyframes pulse-red {
+        0% { box-shadow: 0 0 0 0 rgba(214, 48, 49, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(214, 48, 49, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(214, 48, 49, 0); }
+    }
+</style>
+
+<div class="row">
+    <div class="col-12">
+        <h2 class="fw-bold mb-3"><i class="fa-solid fa-satellite-dish text-primary me-2"></i>Monitorizare Trafic Live</h2>
+        
+        <div class="controls-panel d-flex gap-3 align-items-center flex-wrap">
+            <div class="flex-grow-1">
+                <label class="form-label fw-bold small text-muted">Alege Linia:</label>
+                <select id="routeSelect" class="form-select" onchange="startTracking()">
+                    <option value="" selected disabled>-- Selectează o rută --</option>
+                    {% for route in routes %}
+                        <option value="{{ route.route_short_name }}">
+                            {{ route.route_short_name }} - {{ route.route_long_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="text-end">
+                <label class="form-label fw-bold small text-muted">Status:</label>
+                <div id="status-badge">
+                    <span class="badge bg-secondary"><i class="fa-solid fa-pause"></i> Așteptare selecție</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-12 position-relative">
+        <div id="live-map"></div>
+        <div id="loading-overlay" class="position-absolute top-50 start-50 translate-middle d-none" style="z-index: 999;">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // 1. Inițializare Hartă
+    var map = L.map('live-map').setView([44.4268, 26.1025], 12);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    var vehicleLayer = L.layerGroup().addTo(map);
+    var pathLayer = L.layerGroup().addTo(map);
+    var refreshInterval = null;
+
+    // 2. Funcția de Tracking
+    function startTracking() {
+        var routeName = document.getElementById('routeSelect').value;
+        if(!routeName) return;
+
+        // Resetăm layers
+        vehicleLayer.clearLayers();
+        pathLayer.clearLayers();
+        document.getElementById('status-badge').innerHTML = '<span class="badge bg-success"><i class="fa-solid fa-circle-notch fa-spin"></i> Se actualizează...</span>';
+
+        // Oprim intervalul vechi dacă există
+        if(refreshInterval) clearInterval(refreshInterval);
+
+        // Prima apelare imediată
+        fetchVehicles(routeName);
+
+        // Setăm interval la 5 secunde
+        refreshInterval = setInterval(() => {
+            fetchVehicles(routeName);
+        }, 5000);
+    }
+
+    function fetchVehicles(route) {
+        fetch(`/api/live_vehicles?route=${route}`)
+            .then(res => res.json())
+            .then(data => {
+                vehicleLayer.clearLayers();
+
+                if(data.error) {
+                    console.error(data.error);
+                    return;
+                }
+
+                // Desenăm vehiculele
+                data.vehicles.forEach(v => {
+                    // Alegem clasa CSS în funcție de tip (Metrou sau Autobuz)
+                    let cssClass = 'bus-marker';
+                    if (['M1', 'M2', 'M3', 'M4', 'M5'].includes(route)) {
+                        cssClass += ' metro-marker';
+                    }
+
+                    var icon = L.divIcon({
+                        className: cssClass,
+                        html: '<i class="fa-solid fa-bus" style="margin-top:2px;"></i>',
+                        iconSize: [24, 24]
+                    });
+
+                    var marker = L.marker([v.lat, v.lon], {icon: icon})
+                        .bindPopup(`<b>Linia ${route}</b><br>Către: ${v.headsign}<br>Viteză est: ${v.speed} km/h`);
+                    
+                    vehicleLayer.addLayer(marker);
+                });
+
+                document.getElementById('status-badge').innerHTML = `<span class="badge bg-success">Online: ${data.vehicles.length} vehicule</span>`;
+            })
+            .catch(err => console.error(err));
+    }
+</script>
+
+{% endblock %}

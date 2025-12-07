@@ -9,6 +9,66 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        /* --- STILIZARE GOOGLE TRANSLATE --- */
+        
+        /* 1. Ascunde bara de sus (Banner Frame) */
+        .goog-te-banner-frame.skiptranslate {
+            display: none !important;
+        }
+        .goog-te-banner-frame {
+            display: none !important;
+        }
+
+        /* 2. Previne deplasarea paginii în jos */
+        body {
+            top: 0px !important;
+            position: static !important;
+        }
+
+        /* 3. Ascunde tooltip-urile enervante la hover pe text */
+        .goog-tooltip {
+            display: none !important;
+        }
+        .goog-tooltip:hover {
+            display: none !important;
+        }
+        .goog-text-highlight {
+            background-color: transparent !important;
+            border: none !important; 
+            box-shadow: none !important;
+        }
+        
+        /* Stilizare buton traducere să se potrivească cu Bootstrap */
+        #google_translate_element {
+            margin-top: 2px;
+        }
+        .goog-te-gadget-simple {
+            background-color: rgba(255,255,255,0.1) !important;
+            border: 1px solid rgba(255,255,255,0.3) !important;
+            padding: 4px 8px !important;
+            border-radius: 20px !important;
+            font-size: 14px !important;
+            line-height: 20px !important;
+            display: inline-block;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .goog-te-gadget-simple:hover {
+            background-color: rgba(255,255,255,0.2) !important;
+        }
+        /* Ascunde textul "Powered by Google" dacă e prea lung */
+        .goog-te-gadget-simple span {
+            color: white !important;
+        }
+        .goog-te-gadget-simple .goog-te-menu-value span:last-child {
+            display: none;
+        }
+        .goog-te-gadget-icon {
+            display: none !important; /* Ascunde iconița Google */
+        }
+    </style>
 </head>
 <body>
 
@@ -24,9 +84,21 @@
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-center">
+                    
+                    <!-- BUTON TRADUCERE (Adăugat aici) -->
+                    <li class="nav-item me-3">
+                        <div id="google_translate_element"></div>
+                    </li>
+
                     {% if current_user.is_authenticated %}
                         <li class="nav-item me-3">
                             <span class="text-white-50 small">Salut, {{ current_user.username }}</span>
+                        </li>
+                        <!-- LINK NOU ADĂUGAT AICI -->
+                        <li class="nav-item">
+                            <a href="/live" class="btn btn-outline-info btn-sm me-2">
+                                <i class="fa-solid fa-satellite-dish"></i> Live
+                            </a>
                         </li>
                         <li class="nav-item">
                             <a href="/tickets" class="btn btn-outline-light btn-sm me-2">
@@ -66,5 +138,19 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    <!-- SCRIPT GOOGLE TRANSLATE -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+          new google.translate.TranslateElement({
+            pageLanguage: 'ro', // Limba originală a site-ului
+            includedLanguages: 'en,fr,de,es,it,ro', // Limbile disponibile în meniu
+            layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+            autoDisplay: false
+          }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
 </body>
 </html>
