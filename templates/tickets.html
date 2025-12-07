@@ -1,0 +1,268 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<style>
+    /* Card Bilet Activ - Stil Portofel Digital */
+    .ticket-active {
+        background: linear-gradient(135deg, #005eb8 0%, #009345 100%);
+        color: white;
+        border: none;
+        border-radius: 16px;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.3s;
+    }
+    .ticket-active:hover {
+        transform: translateY(-2px);
+    }
+    
+    /* Cerculeț pulsant */
+    .pulse-dot {
+        width: 10px;
+        height: 10px;
+        background-color: #00ff00;
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 0 rgba(0, 255, 0, 0.7);
+        animation: pulse 2s infinite;
+        margin-right: 6px;
+    }
+    
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(0, 255, 0, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0); }
+    }
+
+    /* Zona de timp rămas */
+    .countdown-timer {
+        font-family: 'Courier New', Courier, monospace; /* Font monospaced pentru cifre */
+        font-weight: bold;
+        letter-spacing: 1px;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 5px 10px;
+        border-radius: 8px;
+        display: inline-block;
+    }
+
+    /* Carduri Oferte */
+    .offer-card {
+        border: 1px solid #eee;
+        border-radius: 12px;
+        transition: all 0.2s;
+    }
+    .offer-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        border-color: #005eb8;
+    }
+</style>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="fw-bold mb-3"><i class="fa-solid fa-wallet text-primary me-2"></i>Portofel Digital</h2>
+    </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<h5 class="text-muted mb-3 fw-bold text-uppercase small ls-1">Biletele Tale Active</h5>
+<div class="row mb-5">
+    {% if active_tickets %}
+        {% for ticket in active_tickets %}
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card ticket-active shadow-lg">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <span class="badge bg-white text-primary fw-bold px-3 py-2">
+                            <i class="fa-solid fa-ticket me-1"></i> {{ ticket.type }}
+                        </span>
+                        <div class="d-flex align-items-center bg-dark bg-opacity-25 px-2 py-1 rounded">
+                            <span class="pulse-dot"></span>
+                            <small class="fw-bold" style="font-size: 0.75rem;">VALID</small>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mb-3">
+                        <small class="opacity-75 d-block mb-1">Timp Rămas</small>
+                        <h2 class="mb-0 countdown-timer" 
+                            id="timer-{{ ticket.id }}" 
+                            data-expires="{{ ticket.expire_time.isoformat() }}">
+                            Calculare...
+                        </h2>
+                    </div>
+
+                    <div class="d-flex justify-content-between text-white-50 small mb-3">
+                        <span>Expiră la:</span>
+                        <span class="text-white fw-bold">{{ ticket.expire_time.strftime('%H:%M') }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between text-white-50 small">
+                        <span>Data:</span>
+                        <span class="text-white">{{ ticket.expire_time.strftime('%d.%m.%Y') }}</span>
+                    </div>
+                    
+                    <hr class="border-white opacity-25 my-3">
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="opacity-75">ID: #{{ ticket.id }}</small>
+                        <i class="fa-solid fa-qrcode fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="alert alert-light border-0 shadow-sm d-flex align-items-center p-4" style="background-color: #f8f9fa;">
+                <div class="bg-white p-3 rounded-circle shadow-sm me-3 text-muted">
+                    <i class="fa-solid fa-wallet fa-2x"></i>
+                </div>
+                <div>
+                    <h5 class="alert-heading fw-bold mb-1">Portofel gol</h5>
+                    <p class="mb-0 text-muted small">Nu ai niciun bilet activ în acest moment. Cumpără unul de mai jos pentru a începe călătoria.</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<h5 class="text-muted mb-3 fw-bold text-uppercase small ls-1">Cumpără Titluri de Călătorie</h5>
+<div class="row g-3">
+    
+    <div class="col-6 col-md-3">
+        <div class="card offer-card h-100">
+            <div class="card-body text-center p-3">
+                <div class="text-primary mb-2"><i class="fa-solid fa-stopwatch fa-2x"></i></div>
+                <h6 class="fw-bold">90 Minute</h6>
+                <div class="text-muted small mb-2" style="font-size: 0.8rem;">Metropolitan</div>
+                <h4 class="fw-bold mb-3">3 <small>RON</small></h4>
+                <button class="btn btn-sm btn-outline-primary w-100 rounded-pill" onclick="openBuyModal('Bilet 90 Min', '3.00', '90min')">Ia Bilet</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card offer-card h-100">
+            <div class="card-body text-center p-3">
+                <div class="text-success mb-2"><i class="fa-solid fa-clock fa-2x"></i></div>
+                <h6 class="fw-bold">24 Ore</h6>
+                <div class="text-muted small mb-2" style="font-size: 0.8rem;">Abonament Zi</div>
+                <h4 class="fw-bold mb-3">8 <small>RON</small></h4>
+                <button class="btn btn-sm btn-outline-success w-100 rounded-pill" onclick="openBuyModal('Abonament 24h', '8.00', '24h')">Ia Bilet</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card offer-card h-100">
+            <div class="card-body text-center p-3">
+                <div class="text-warning mb-2"><i class="fa-solid fa-calendar-days fa-2x"></i></div>
+                <h6 class="fw-bold">72 Ore</h6>
+                <div class="text-muted small mb-2" style="font-size: 0.8rem;">Turistic</div>
+                <h4 class="fw-bold mb-3">20 <small>RON</small></h4>
+                <button class="btn btn-sm btn-outline-warning w-100 rounded-pill" onclick="openBuyModal('Abonament 72h', '20.00', '72h')">Ia Bilet</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card offer-card h-100">
+            <div class="card-body text-center p-3">
+                <div class="text-info mb-2"><i class="fa-solid fa-plane-up fa-2x"></i></div>
+                <h6 class="fw-bold">Aeroport</h6>
+                <div class="text-muted small mb-2" style="font-size: 0.8rem;">Expres 783</div>
+                <h4 class="fw-bold mb-3">3 <small>RON</small></h4>
+                <button class="btn btn-sm btn-outline-info w-100 rounded-pill" onclick="openBuyModal('Bilet Aeroport', '3.00', 'airport')">Ia Bilet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="buyModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Confirmare</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p class="mb-1 text-muted">Produs selectat:</p>
+                <h3 class="text-primary fw-bold" id="modal_ticket_name">...</h3>
+                <h1 class="display-4 fw-bold my-3" id="modal_ticket_price">...</h1>
+                <p class="small text-muted">Suma va fi retrasă din soldul contului (simulat).</p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <form action="/buy_ticket" method="POST" class="w-100">
+                    <input type="hidden" name="ticket_type" id="modal_ticket_type">
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-pill">Confirmă și Plătește</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. Mutare Modale în Body (Fix Ecran Gri)
+    document.addEventListener("DOMContentLoaded", function() {
+        var modals = document.querySelectorAll('.modal');
+        modals.forEach(function(modal) {
+            document.body.appendChild(modal);
+        });
+
+        // 2. Pornire Cronometre
+        startTimers();
+    });
+
+    function openBuyModal(name, price, type) {
+        document.getElementById('modal_ticket_name').innerText = name;
+        document.getElementById('modal_ticket_price').innerText = price + " RON";
+        document.getElementById('modal_ticket_type').value = type;
+        var myModal = new bootstrap.Modal(document.getElementById('buyModal'));
+        myModal.show();
+    }
+
+    // --- LOGICA PENTRU CRONOMETRU ---
+    function startTimers() {
+        const timers = document.querySelectorAll('.countdown-timer');
+        
+        setInterval(() => {
+            timers.forEach(timer => {
+                const expireStr = timer.getAttribute('data-expires');
+                const expireDate = new Date(expireStr);
+                const now = new Date();
+                
+                // Diferența în milisecunde
+                const diff = expireDate - now;
+
+                if (diff <= 0) {
+                    timer.innerHTML = "EXPIRAT";
+                    timer.closest('.card').classList.remove('ticket-active');
+                    timer.closest('.card').classList.add('bg-secondary');
+                } else {
+                    // Calcul ore, minute, secunde
+                    const hours = Math.floor(diff / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                    // Adaugă zero în față dacă e o singură cifră (ex: 05)
+                    const h = hours < 10 ? "0" + hours : hours;
+                    const m = minutes < 10 ? "0" + minutes : minutes;
+                    const s = seconds < 10 ? "0" + seconds : seconds;
+
+                    timer.innerHTML = `${h}:${m}:${s}`;
+                }
+            });
+        }, 1000);
+    }
+</script>
+
+{% endblock %}

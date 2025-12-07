@@ -1,0 +1,134 @@
+/* static/css/style.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Open+Sans:wght@400;600&display=swap');
+
+:root {
+    --bucharest-green: #009345; /* Verde STB */
+    --bucharest-blue: #005eb8;  /* Albastru STB */
+    --accent-color: #ffce00;    /* Galben taxi/atenție */
+    --text-dark: #2c3e50;
+    --bg-light: #f4f7f6;
+    --gradient-main: linear-gradient(135deg, var(--bucharest-blue) 0%, var(--bucharest-green) 100%);
+}
+
+body {
+    font-family: 'Open Sans', sans-serif;
+    background-color: var(--bg-light);
+    color: var(--text-dark);
+    overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, .navbar-brand {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+}
+
+/* --- NAVBAR MODERN --- */
+.navbar {
+    background: var(--gradient-main) !important;
+    box-shadow: 0 4px 20px rgba(0, 94, 184, 0.3);
+    padding: 1rem 0;
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+    color: white !important;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nav-link {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.nav-link:hover {
+    color: #fff !important;
+    transform: translateY(-2px);
+}
+
+/* --- BUTTONS --- */
+.btn-transport {
+    background: var(--gradient-main);
+    border: none;
+    color: white;
+    padding: 10px 25px;
+    border-radius: 50px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 147, 69, 0.3);
+}
+
+.btn-transport:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 147, 69, 0.4);
+    color: white;
+}
+
+.btn-outline-light {
+    border-radius: 50px;
+    border-width: 2px;
+}
+
+/* --- CARDS & GLASSMORPHISM --- */
+.card {
+    border: none;
+    border-radius: 20px;
+    background: white;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background: white;
+    border-bottom: 1px solid #eee;
+    font-weight: 700;
+    padding: 1.5rem;
+}
+
+/* --- MAP STYLING --- */
+#map {
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 5px solid white;
+    height: 650px; /* Mai înaltă */
+}
+
+/* --- INPUTS --- */
+.form-control {
+    border-radius: 12px;
+    padding: 12px 15px;
+    border: 2px solid #eee;
+    transition: all 0.3s;
+}
+
+.form-control:focus {
+    border-color: var(--bucharest-blue);
+    box-shadow: 0 0 0 4px rgba(0, 94, 184, 0.1);
+}
+
+/* --- ALERTS --- */
+.alert {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+/* --- ANIMATIONS --- */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in-up {
+    animation: fadeIn 0.6s ease-out forwards;
+}

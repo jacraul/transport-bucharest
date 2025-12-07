@@ -1,0 +1,305 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<style>
+    /* --- 1. Stiluri Generale Hartă --- */
+    #map-container {
+        position: relative;
+        height: calc(100vh - 100px); 
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+    }
+    
+    #map {
+        height: 100%;
+        width: 100%;
+        z-index: 1;
+    }
+
+    /* --- 2. Floating Panel (Zona de control) --- */
+    .floating-panel {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 1000;
+        width: 380px; 
+        /* Aici e fixul pentru SCROLL: limităm înălțimea panoului */
+        max-height: calc(100% - 40px); 
+        display: flex;
+        flex-direction: column; /* Elementele se așează unul sub altul */
+        background: rgba(255, 255, 255, 0.96); 
+        backdrop-filter: blur(5px);
+        border-radius: 15px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        padding: 20px;
+        transition: all 0.3s ease;
+    }
+
+    /* --- 3. Scroll pentru Rezultate --- */
+    #route-results {
+        /* Asta activează bara de derulare DOAR pentru rezultate */
+        overflow-y: auto; 
+        margin-top: 15px;
+        padding-right: 5px;
+        min-height: 0; /* Important pentru flexbox */
+        flex-grow: 1;  /* Ocupă spațiul rămas */
+        
+        /* Scrollbar stilizat */
+        scrollbar-width: thin;
+        scrollbar-color: #005eb8 #f1f1f1;
+    }
+
+    /* Webkit scrollbar (Chrome/Safari) */
+    #route-results::-webkit-scrollbar { width: 6px; }
+    #route-results::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+    #route-results::-webkit-scrollbar-thumb { background: #005eb8; border-radius: 4px; }
+
+    /* --- 4. Stiluri Sugestii --- */
+    .suggestions-dropdown {
+        position: absolute;
+        background: white;
+        width: 100%;
+        max-height: 200px;
+        overflow-y: auto;
+        border-radius: 0 0 12px 12px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        z-index: 1002; 
+        display: none;
+        border: 1px solid #eee;
+    }
+
+    .suggestion-item {
+        padding: 10px 15px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .suggestion-item:hover {
+        background-color: #f8f9fa;
+        color: #005eb8;
+        font-weight: 600;
+    }
+
+    /* --- 5. Mobile --- */
+    @media (max-width: 768px) {
+        .floating-panel {
+            position: relative; top: 0; left: 0; width: 100%;
+            max-height: none; margin-bottom: 20px;
+        }
+        #map-container { height: auto; display: flex; flex-direction: column-reverse; }
+        #map { height: 400px; border-radius: 15px; }
+    }
+</style>
+
+<div class="row g-0">
+    <div class="col-12" id="map-container">
+        
+        <div class="floating-panel">
+            <h4 class="mb-3 fw-bold text-primary"><i class="fa-solid fa-route me-2"></i>Planificator</h4>
+            
+            <div class="mb-2 position-relative">
+                <label class="small text-muted fw-bold">PLECARE</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-location-dot text-success"></i></span>
+                    <input type="text" id="start" class="form-control border-start-0 bg-light" placeholder="Caută strada..." autocomplete="off">
+                </div>
+                <div id="suggestions-start" class="suggestions-dropdown"></div>
+                <div class="text-end">
+                    <button onclick="useMyLocation()" class="btn btn-sm btn-link text-decoration-none p-0" style="font-size: 0.8rem;">
+                        <i class="fa-solid fa-crosshairs"></i> Folosește locația mea
+                    </button>
+                </div>
+            </div>
+
+            <div class="mb-3 position-relative">
+                <label class="small text-muted fw-bold">DESTINAȚIE</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-flag-checkered text-danger"></i></span>
+                    <input type="text" id="dest" class="form-control border-start-0 bg-light" placeholder="Caută strada..." autocomplete="off">
+                </div>
+                <div id="suggestions-dest" class="suggestions-dropdown"></div>
+            </div>
+
+            <div class="bg-light p-2 rounded mb-3 border">
+                <div class="row g-2 align-items-center">
+                    <div class="col-4">
+                        <select id="timeType" class="form-select form-select-sm border-0 bg-white shadow-sm" style="font-size: 0.85rem;">
+                            <option value="departure" selected>Plecare</option>
+                            <option value="arrival">Sosire</option>
+                        </select>
+                    </div>
+                    <div class="col-8">
+                        <input type="datetime-local" id="routeTime" class="form-control form-control-sm border-0 shadow-sm">
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="calculateRoute()" class="btn btn-primary w-100 shadow-sm fw-bold">
+                <i class="fa-solid fa-magnifying-glass me-2"></i> Găsește Ruta
+            </button>
+
+            <div id="route-results" class="d-none border-top mt-3 pt-2">
+                <h6 class="fw-bold mb-2 text-dark">Detalii Rută:</h6>
+                <div id="route-info" class="text-muted small">
+                    </div>
+            </div>
+        </div>
+
+        <div id="map"></div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // 1. Initialize Map
+    var map = L.map('map', { zoomControl: false }).setView([44.4268, 26.1025], 13);
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap contributors', maxZoom: 19
+    }).addTo(map);
+
+    var currentRouteLayer = null;
+    var markers = [];
+
+    // 2. Set Default Time (NOW)
+    window.addEventListener('DOMContentLoaded', () => {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); // Fix fus orar
+        document.getElementById('routeTime').value = now.toISOString().slice(0, 16);
+    });
+
+    // 3. Autocomplete Logic
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
+
+    function searchAddress(query, resultsContainerId, inputId) {
+        if (query.length < 3) {
+            document.getElementById(resultsContainerId).style.display = 'none';
+            return;
+        }
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&viewbox=25.90,44.55,26.25,44.30&bounded=1&limit=5&addressdetails=1`;
+
+        fetch(url).then(res => res.json()).then(data => {
+            const container = document.getElementById(resultsContainerId);
+            container.innerHTML = '';
+            if (data.length > 0) {
+                container.style.display = 'block';
+                data.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    let displayText = item.display_name.split(',').slice(0, 3).join(','); 
+                    div.innerHTML = `<i class="fa-solid fa-map-pin text-muted"></i> ${displayText}`;
+                    div.onclick = function() {
+                        document.getElementById(inputId).value = displayText; 
+                        container.style.display = 'none'; 
+                    };
+                    container.appendChild(div);
+                });
+            } else { container.style.display = 'none'; }
+        });
+    }
+
+    const handleStartInput = debounce((e) => searchAddress(e.target.value, 'suggestions-start', 'start'), 300);
+    const handleDestInput = debounce((e) => searchAddress(e.target.value, 'suggestions-dest', 'dest'), 300);
+    document.getElementById('start').addEventListener('input', handleStartInput);
+    document.getElementById('dest').addEventListener('input', handleDestInput);
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.floating-panel')) {
+            document.getElementById('suggestions-start').style.display = 'none';
+            document.getElementById('suggestions-dest').style.display = 'none';
+        }
+    });
+
+    // 4. Other Functions
+    function useMyLocation() {
+        if (navigator.geolocation) {
+            const btn = document.querySelector('button[onclick="useMyLocation()"]');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ...';
+
+            navigator.geolocation.getCurrentPosition(position => {
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}`)
+                    .then(res => res.json())
+                    .then(data => {
+                         let address = data.display_name.split(',').slice(0, 2).join(',');
+                         document.getElementById('start').value = address;
+                    });
+                map.setView([position.coords.latitude, position.coords.longitude], 15);
+                L.circleMarker([position.coords.latitude, position.coords.longitude], {
+                    radius: 8, fillColor: "#009345", color: "#fff", weight: 2, fillOpacity: 1
+                }).addTo(map).bindPopup("Locația ta").openPopup();
+                btn.innerHTML = originalHTML;
+            });
+        }
+    }
+
+    function clearMap() {
+        if (currentRouteLayer) map.removeLayer(currentRouteLayer);
+        markers.forEach(m => map.removeLayer(m));
+        markers = [];
+    }
+
+    // 5. CALCULATE ROUTE (Cu parametri de timp)
+    function calculateRoute() {
+        let start = document.getElementById('start').value;
+        let dest = document.getElementById('dest').value;
+        
+        // Luăm valorile noi
+        let timeType = document.getElementById('timeType').value;
+        let routeTime = document.getElementById('routeTime').value;
+
+        let btn = document.querySelector('button[onclick="calculateRoute()"]');
+
+        if(!start || !dest) { alert("Completează adresele!"); return; }
+
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> ...';
+        btn.disabled = true;
+        clearMap();
+
+        fetch('/calculate_route', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                start: start, 
+                end: dest,
+                time_type: timeType,   // TRIMITEM TIPUL (plecare/sosire)
+                time_value: routeTime  // TRIMITEM ORA
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-magnifying-glass me-2"></i> Găsește Ruta';
+
+            if(data.error) {
+                alert("Eroare: " + data.error);
+            } else {
+                document.getElementById('route-results').classList.remove('d-none');
+                document.getElementById('route-info').innerHTML = data.html_info;
+
+                var startMarker = L.marker(data.start_coords).addTo(map).bindPopup("<b>Plecare</b>");
+                var endMarker = L.marker(data.end_coords).addTo(map).bindPopup("<b>Sosire</b>");
+                markers.push(startMarker, endMarker);
+                
+                var latlngs = data.path_coords; 
+                var polyline = L.polyline(latlngs, {color: '#005eb8', weight: 5}).addTo(map);
+                currentRouteLayer = polyline;
+                
+                map.fitBounds(polyline.getBounds(), {padding: [50, 50]});
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            btn.disabled = false;
+            btn.innerHTML = 'Reîncearcă';
+        });
+    }
+</script>
+{% endblock %}
