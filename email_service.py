@@ -9,11 +9,11 @@ def send_ticket_email(to_email, ticket_details):
     """
     
     # --- CONFIGURARE SMTP ---
-    SMTP_SERVER = "mail.euroalfa.eu"
-    SMTP_PORT = 465 
-    SENDER_EMAIL = "contact@euroalfa.eu"
+    SMTP_SERVER = ""
+    SMTP_PORT =  
+    SENDER_EMAIL = ""
     # ⚠️ Asigură-te că parola este corectă aici sau în variabile de mediu
-    SENDER_PASSWORD = "antenastars25" 
+    SENDER_PASSWORD = "" 
 
     # Creare container email (Multipart)
     msg = MIMEMultipart('alternative')
